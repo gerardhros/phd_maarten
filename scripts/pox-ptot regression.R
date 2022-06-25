@@ -1,21 +1,20 @@
 ###linear regression (predict Pox:Ptot as a function of Alox+Feox and PSI)
 
 #load libraries
-library(caret)
-library(data.table)
+require(caret); require(data.table)
 
-#set wd
-setwd("C:/Users/Maarten van Doorn/SPRINGG/Gerard Ros - NMI-PROJ/JustPmaps/02 models/pox-ptot ratio")
+# set LOCATION OF DATA FILES
+loc <- paste0("D:/OneDrive - SPRINGG/NMI-PROJ/JustPmaps/02 models/pox-ptot ratio/")
 
 #constants
 ptop2o5 <- 2.29
 Pmolarmass <- 30.973762
 
+#read NMI dataset
+dt <- fread(paste0(loc,"data.csv"))
+
 #regression function, returning lm.model, prediction plot and data
-regression_poxptot <- function(){
-  #read NMI dataset
-  dt <- fread("data.csv")
-  
+
   #calc PSI
   dt[, psi := `p_ox (mmol/kg)` / (`al_ox (mmol/kg)` + `fe_ox (mmol/kg)`)]
   
@@ -36,8 +35,14 @@ regression_poxptot <- function(){
   #calc alox + feox
   dt[, `alox_feox (mmol/kg)` := `al_ox (mmol/kg)` + `fe_ox (mmol/kg)`]
   
-  #create regression model
-  model.lm <- lm(pox_ptot ~ log10(`alox_feox (mmol/kg)`) + psi, data = dt) #pox_ptot
+  # change names by Gerard to simplify use in models
+  dt[,alfeox := `alox_feox (mmol/kg)`]
+  dt[,alfeox_log10 := log10(alfeox)]
+  dt[,pox_ptot_exp := exp(pox_ptot)]
+  
+  # create regression model for pox-ptot ratio
+  model.lm <- lm(pox_ptot ~ alfeox_log10 + psi, data = dt) 
+  model.lm <- lm(pox_ptot ~ alfeox_log10, data = dt) 
   
   #predict on training set
   dt$pox_ptot_predicted <- predict(model.lm, dt)
@@ -57,17 +62,12 @@ regression_poxptot <- function(){
     geom_abline(slope = 1, intercept = 0, linetype = "dashed", col = "blue", size = 1) +
     annotate(geom = "text", x = 0.25, y = 1.1, label = metrics$label) +
     labs(x = "Measured Pox:Ptotal (ratio)", y = "Predicted Pox:Ptotal (ratio)")
-  
+  plot1
   #bind to list and return
   result <- list(model = model.lm,
                  modelsummary = summary(model.lm),
                  plot = plot1, 
                  data = dt)
   
-  #return
-  return(result)
-}
 
-#run regression and save as .RDS
-result <- regression_poxptot()
-saveRDS(result, "regression results.RDS")
+saveRDS(result, "data/poxptot_lm.RDS")
