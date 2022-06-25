@@ -1,24 +1,39 @@
 ####visualization of raster images
 
 #load packages
-library(terra) 
-library(ggplot2)
-library(ggspatial)
+library(terra); library(ggplot2); library(ggspatial)
 
-#set wd
-setwd(paste0("C:/Users/", Sys.info()[["user"]], "/SPRINGG/Gerard Ros - NMI-PROJ/JustPmaps/"))
+  # set wd if no link to local data is required
+  # setwd(paste0("C:/Users/", Sys.info()[["user"]], "/SPRINGG/Gerard Ros - NMI-PROJ/JustPmaps/"))
 
-#set ggplot theme
-theme_set(theme_bw())
+  #set ggplot theme
+  theme_set(theme_bw())
 
-#homosline projection
-homosoline <- "+proj=igh +lat_0=0 +lon_0=0 +datum=WGS84 +units=m +no_defs" #homosoline projection
+  #homosline projection
+  homosoline <- "+proj=igh +lat_0=0 +lon_0=0 +datum=WGS84 +units=m +no_defs" 
 
-#load rasters
-alox <- rast("03 output/alox.tiff")
-feox <- rast("03 output/feox.tiff")
-both <- rast("03 output/fe_alox.tiff")
-
+  # load rasters with predicted Al and Fe oxides (made by Maarten)
+  alox <- rast("data/alox.tiff")
+  feox <- rast("data/feox.tiff")
+  both <- rast("data/fe_alox.tiff")
+  
+  # load crop P uptake in arable land (from IMAGE) and convert to boolean (there is arable crop or not)
+  crop <- rast('data/crop_puptake.asc')
+  crop[crop==0] <- NA
+  crop <- terra::resample(crop,alox,method ='near')
+  crop[!is.na(crop)] <- 1
+  
+  # update alox and feox
+  alox2 <- alox * crop
+  feox2 <- feox * crop
+  alfeox2 <- both * crop
+  
+  # stack them
+  spr <- c(alox2,feox2,alfeox2)
+  
+  
+  
+  
 #visualize
 visualize <- function(raster, name, breaks){
   #convert rast to homosline
