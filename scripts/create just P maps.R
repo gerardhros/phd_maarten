@@ -71,10 +71,20 @@ require(terra); require(ggplot2); require(ggspatial) ; require(data.table)
     psurplus <- terra::resample(psurplus,alox,method ='bilinear')
     psurplus <- psurplus * 0.4365 / croparea
     names(psurplus) <- 'psurplus'
-     
+    
+    # read in lena stack 
+    r.lena1 <- rast('../02 data/Fig 4a uptake_P_arable_current_kgP_perha.tif')
+    r.lena2 <- rast('../02 data/Fig 4b uptake_P_arable_target_kgP_perha.tif')
+    r.lena3 <- rast('../02 data/Fig 4c uptake_P_arable_finaltarget_kgP_perha.tif')
+    names(r.lena1) <- 'pup1'  
+    names(r.lena2) <- 'pup2' 
+    names(r.lena3) <- 'pup3' 
+    r.lena <- c(r.lena1,r.lena2,r.lena3)
+    r.lena <- terra::resample(r.lena,alox,method='bilinear')
+    
     
   # stack them
-  dt.stack <- c(croparea,alox2,feox2,alfeox2,ptot,dens,pup,pinput,psurplus)
+  dt.stack <- c(croparea,alox2,feox2,alfeox2,ptot,dens,pup,pinput,psurplus,r.lena)
   
   # estimate just P levels
   
@@ -112,6 +122,14 @@ require(terra); require(ggplot2); require(ggspatial) ; require(data.table)
     dt[, req_ptotal2 := croparea * pfert2]
     dt[, req_ptotal0 := croparea * pinput]
     
+    # long-term plus mid-term P input
+    dt[, pfert1lt := pup3 + preq1]
+    dt[, pfert2lt := pup3 + preq2]
+    dt[, req_ptotal3 := croparea * pfert1lt]
+    dt[, req_ptotal4 := croparea * pfert2lt]
+    dt[, req_preq1 := croparea * preq1]
+    dt[, req_preq2 := croparea * preq2]
+    
   # make raster
   r.fin <- terra::rast(dt,type='xyz')
   terra::crs(r.fin) <- 'epsg:4326'
@@ -121,6 +139,14 @@ require(terra); require(ggplot2); require(ggspatial) ; require(data.table)
   world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
   
   # create plot for just P level for PSI target = 0.1
+  p1 <- visualize(raster = r.fin, 
+                 layer = 'preq1', 
+                 name = "P dose\n(kg P / ha)", 
+                 breaks = c(-1000,5,50,100,500),
+                 labels = c('<5','5-50','50-100','>100'),
+                 ftitle = 'Mid-term required P surplus to reach PSI target of 10%')
+  ggsave(filename = "products/preq_target1.png", 
+         plot = p1, width = 32, height = 24, units = c("cm"), dpi = 1200)
   plot.pfert1 <- visualize(raster = r.fin, 
                            layer = 'pfert1', 
                            name = "P dose\n(kg P / ha)", 
@@ -129,8 +155,25 @@ require(terra); require(ggplot2); require(ggspatial) ; require(data.table)
                            ftitle = 'just P level with PSI target of 10%')
   ggsave(filename = "products/pfert_target1.png", 
          plot = plot.pfert1, width = 32, height = 24, units = c("cm"), dpi = 1200)
+  plot.pfert1lt <- visualize(raster = r.fin, 
+                           layer = 'pfert1lt', 
+                           name = "P dose\n(kg P / ha)", 
+                           breaks = c(-1000,5,50,100,500),
+                           labels = c('<5','5-50','50-100','>100'),
+                           ftitle = 'just P level for PSI target of 10% and corr. target P uptake from yield gap')
+  ggsave(filename = "products/pfert_target1lt.png", 
+         plot = plot.pfert1lt, width = 32, height = 24, units = c("cm"), dpi = 1200)
   
   # create plot for just P level for PSI target = 0.15
+  p2 <- visualize(raster = r.fin, 
+                  layer = 'preq2', 
+                  name = "P dose\n(kg P / ha)", 
+                  breaks = c(-1000,5,50,100,500),
+                  labels = c('<5','5-50','50-100','>100'),
+                  ftitle = 'Mid-term required P surplus to reach PSI target of 15%')
+  ggsave(filename = "products/preq_target2.png", 
+         plot = p2, width = 32, height = 24, units = c("cm"), dpi = 1200)
+  
   plot.pfert2 <- visualize(raster = r.fin, 
                            layer = 'pfert2', 
                            name = "P dose\n(kg P / ha)", 
@@ -139,6 +182,16 @@ require(terra); require(ggplot2); require(ggspatial) ; require(data.table)
                            ftitle = 'just P level with PSI target of 15%')
   ggsave(filename = "products/pfert_target2.png", 
          plot = plot.pfert2, width = 32, height = 24, units = c("cm"), dpi = 1200)
+  plot.pfert2lt <- visualize(raster = r.fin, 
+                             layer = 'pfert2lt', 
+                             name = "P dose\n(kg P / ha)", 
+                             breaks = c(-1000,5,50,100,500),
+                             labels = c('<5','5-50','50-100','>100'),
+                             ftitle = 'just P level for PSI target of 15% and corr. target P uptake from yield gap')
+  ggsave(filename = "products/pfert_target2lt.png", 
+         plot = plot.pfert2lt, width = 32, height = 24, units = c("cm"), dpi = 1200)
+  
+  
   
   # create plot for current P surplus
   p3 <- visualize(raster = r.fin, 
@@ -219,14 +272,16 @@ require(terra); require(ggplot2); require(ggspatial) ; require(data.table)
   ggsave(filename = "products/psi_current.png", 
          plot = p10, width = 32, height = 24, units = c("cm"), dpi = 1200)
   
+  p11 <- visualize(raster = r.fin, 
+                   layer = 'ptot', 
+                   name = "total P/(mg/kg)", 
+                   breaks = c(0,100,250,750,1500,10000),
+                   labels = c('<100','100-250','250-750','750-1500','>1500'),
+                   ftitle = 'Total Phosphorus in Arable Soils')
+  ggsave(filename = "products/ptot_soil.png", 
+         plot = p11, width = 32, height = 24, units = c("cm"), dpi = 1200)
   
-  r.lena1 <- rast('../02 data/Fig 4a uptake_P_arable_current_kgP_perha.tif')
-  r.lena2 <- rast('../02 data/Fig 4b uptake_P_arable_target_kgP_perha.tif')
-  r.lena3 <- rast('../02 data/Fig 4c uptake_P_arable_finaltarget_kgP_perha.tif')
-  names(r.lena1) <- 'pup1'  
-  names(r.lena2) <- 'pup2' 
-  names(r.lena3) <- 'pup3' 
-  r.lena <- c(r.lena1,r.lena2,r.lena3)
+ 
 
   pa1 <- visualize(raster = r.lena, 
                    layer = 'pup1', 
