@@ -201,6 +201,59 @@ require(terra); require(ggplot2); require(ggspatial) ; require(data.table)
   ggsave(filename = "products/psp_difference_target2.png", 
          plot = p8, width = 32, height = 24, units = c("cm"), dpi = 1200)
   
+  # maps with soil data
+  p9 <- visualize(raster = r.fin, 
+                  layer = 'alfeox', 
+                  name = "Al and Fe oxides\n(mmol / kg)", 
+                  breaks = c(-1000,25,75,125,200,1000),
+                  labels = c('<25','25-75','75-125','125-200','>200'),
+                  ftitle = 'Aluminium and iron oxides')
+  ggsave(filename = "products/alfeox.png", 
+         plot = p9, width = 32, height = 24, units = c("cm"), dpi = 1200)
+  p10 <- visualize(raster = r.fin, 
+                  layer = 'psi_current', 
+                  name = "PSI (-)", 
+                  breaks = c(-1,0.05,0.10,0.15,0.5,5),
+                  labels = c('<0.05','0.05-0.10','0.10-0.15','0.15-0.50','>0.5'),
+                  ftitle = 'Phosphate Saturation Index (-)')
+  ggsave(filename = "products/psi_current.png", 
+         plot = p10, width = 32, height = 24, units = c("cm"), dpi = 1200)
+  
+  
+  r.lena1 <- rast('../02 data/Fig 4a uptake_P_arable_current_kgP_perha.tif')
+  r.lena2 <- rast('../02 data/Fig 4b uptake_P_arable_target_kgP_perha.tif')
+  r.lena3 <- rast('../02 data/Fig 4c uptake_P_arable_finaltarget_kgP_perha.tif')
+  names(r.lena1) <- 'pup1'  
+  names(r.lena2) <- 'pup2' 
+  names(r.lena3) <- 'pup3' 
+  r.lena <- c(r.lena1,r.lena2,r.lena3)
+
+  pa1 <- visualize(raster = r.lena, 
+                   layer = 'pup1', 
+                   name = "P uptake\n(kg P / ha)", 
+                   breaks = c(-100,5,10,20,30,40,50,1000),
+                   labels = c('<5','5-10','10-20','20-30','30-40','40-50','>50'),
+                   ftitle = 'Current P uptake (2015)')
+  ggsave(filename = "products/pup1.png", 
+         plot = pa1, width = 26, height = 14, units = c("cm"), dpi = 1200)
+  pa2 <- visualize(raster = r.lena, 
+                   layer = 'pup2', 
+                   name = "Target P uptake\n(kg P / ha)", 
+                   breaks = c(-100,5,10,20,30,40,50,1000),
+                   labels = c('<5','5-10','10-20','20-30','30-40','40-50','>50'),
+                   ftitle = 'Target P uptake based on yield gap')
+  ggsave(filename = "products/pup2.png", 
+         plot = pa2, width = 26, height = 14, units = c("cm"), dpi = 1200)
+  pa3 <- visualize(raster = r.lena, 
+                   layer = 'pup3', 
+                   name = "Target P uptake\n(kg P / ha)", 
+                   breaks = c(-100,5,10,20,30,40,50,1000),
+                   labels = c('<5','5-10','10-20','20-30','30-40','40-50','>50'),
+                   ftitle = 'Corrected target P uptake based on yield gap')
+  ggsave(filename = "products/pup3.png", 
+         plot = pa3, width = 26, height = 14, units = c("cm"), dpi = 1200)
+  
+      
 # --- PlOT FIGURES IN HOMOSOLINE PROJECTION --------
 # https://wilkelab.org/practicalgg/articles/goode.html
   
